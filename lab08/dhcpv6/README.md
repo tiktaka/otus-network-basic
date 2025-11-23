@@ -331,9 +331,52 @@ R2(config-if)#ipv6 dhcp ?
   client  Act as an IPv6 DHCP client
   server  Act as an IPv6 DHCP server
 ```
-Как видно из вывода, команда relay отсутствует на всех моделях роутеров в CPT...\ 
+Как видно из вывода, команда relay отсутствует на всех моделях роутеров в CPT...\
+В данном случае возможно настроить R2 в качестве dhcp-сервера, чтобы настроить PC-B и завершить настройки по данной ЛР:
+```
+R2(config)#ipv6 dhcp pool R2-STATEFUL
+R2(config-dhcpv6)#address prefix 2001:db8:acad:3:aaa::/80
+R2(config-dhcpv6)#dns-server 2001:db8:acad::254
+R2(config-dhcpv6)#domain-name STATEFUL.com
+R2(config)#interface g0/0/1
+R2(config-if)#ipv6 dhcp server R2-STATEFUL
+
+```
 #### Шаг 3. Попытка получить адрес IPv6 из DHCPv6 на PC-B.
 **a.**	Перезапустите PC-B.\
 **b.**	Откройте командную строку на PC-B и выполните команду ipconfig /all и проверьте выходные данные, чтобы увидеть результаты операции ретрансляции DHCPv6.\
 **c.** Проверьте подключение с помощью пинга IP-адреса интерфейса R0 G0/0/1.
-Этот пункт в CPT проделать не удалось из-за отсутсвия DHCP-relay для ipv6.
+```
+C:\>ipconfig /all
+
+FastEthernet0 Connection:(default port)
+
+   Connection-specific DNS Suffix..: STATEFUL.com 
+   Physical Address................: 0009.7C16.C976
+   Link-local IPv6 Address.........: FE80::209:7CFF:FE16:C976
+   IPv6 Address....................: 2001:DB8:ACAD:3:AAA:AEF7:82C3:7431
+   IPv4 Address....................: 0.0.0.0
+   Subnet Mask.....................: 0.0.0.0
+   Default Gateway.................: FE80::1
+                                     0.0.0.0
+   DHCP Servers....................: 10.0.0.1
+   DHCPv6 IAID.....................: 1046286438
+   DHCPv6 Client DUID..............: 00-01-00-01-4C-56-00-D3-00-09-7C-16-C9-76
+   DNS Servers.....................: 2001:DB8:ACAD::254
+                                     0.0.0.0
+
+C:\>ping 2001:db8:acad:1::1
+
+Pinging 2001:db8:acad:1::1 with 32 bytes of data:
+
+Reply from 2001:DB8:ACAD:1::1: bytes=32 time<1ms TTL=254
+Reply from 2001:DB8:ACAD:1::1: bytes=32 time=4ms TTL=254
+Reply from 2001:DB8:ACAD:1::1: bytes=32 time<1ms TTL=254
+Reply from 2001:DB8:ACAD:1::1: bytes=32 time<1ms TTL=254
+
+Ping statistics for 2001:DB8:ACAD:1::1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 4ms, Average = 1ms                     
+```
+DHCP-сервер все параметры клиенту выдал, доступность до R0 пингом проверена успешно. Всё работает корректно, если не считать того, что это сделано не через relay...
